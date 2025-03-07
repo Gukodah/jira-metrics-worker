@@ -1,0 +1,103 @@
+{
+  "createdAt": "2025-03-06T15:24:27.134Z",
+  "updatedAt": "2025-03-06T15:24:27.134Z",
+  "id": "fAv4Xq8S7zU5RAWY",
+  "name": "My workflow",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "create",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $json.spreadsheetUrl }}",
+          "mode": "url"
+        },
+        "title": "=",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1300,
+        160
+      ],
+      "id": "ac627b92-2ab4-4334-8308-024c9f2d4e84",
+      "name": "Google Sheets1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "657049dc-bd08-49c1-9a57-bfd7109a4480",
+          "name": "GoogleSheetsOAuthApi"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        880,
+        60
+      ],
+      "id": "0961eb33-d384-4557-b462-8380bd0aa379",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "resource": "spreadsheet",
+        "title": "=Jira Metrics - {{ $('Data').first().json.projectName }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1100,
+        160
+      ],
+      "id": "f360ebe5-7b5b-41e5-8b0f-48c607c035f1",
+      "name": "Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "657049dc-bd08-49c1-9a57-bfd7109a4480",
+          "name": "GoogleSheetsOAuthApi"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "42e12a61-8afe-45a6-ba62-977eb66e34a6",
+  "triggerCount": 0,
+  "tags": []
+}

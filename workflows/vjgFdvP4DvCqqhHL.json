@@ -1,0 +1,574 @@
+{
+  "createdAt": "2025-02-27T13:15:35.113Z",
+  "updatedAt": "2025-03-05T13:35:18.000Z",
+  "id": "vjgFdvP4DvCqqhHL",
+  "name": "🤖 [Test] Telegram",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "repository",
+        "workspace": "studiowoz",
+        "repository": "teste-n8n",
+        "events": [
+          "repo:push",
+          "pullrequest:push",
+          "repo:updated"
+        ]
+      },
+      "type": "n8n-nodes-base.bitbucketTrigger",
+      "typeVersion": 1,
+      "position": [
+        -280,
+        20
+      ],
+      "id": "12a18559-be02-4727-b562-752db167a7b1",
+      "name": "Bitbucket Trigger",
+      "webhookId": "900d7b8f-942a-46f0-bedc-4877ef1034f4",
+      "credentials": {
+        "bitbucketApi": {
+          "id": "Y1rW745Fu8WEZDGe",
+          "name": "Bitbucket"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.branch }}{{ $json.author }}{{ $json.date }}{{ $json.message }}{{ $json.commit }}{{ $json.last }}",
+        "options": {
+          "systemMessage": "=Você é um supervisor que vai acompnhar e informar os responsáveis de devops sobre os commits realizados nas branchs do projeto e após essas informações acompanhar e retornar a informação de tudo que foi realizado pelo sistema.\n\nVocês irá receber as informações do bitbucket sempre que um push for feito no repositório, essas informações iniciais serão tratadas por um \"Edit Fields\" para conter apenas os dados relevantes e você deverá verificar todas as informações e organiza-la.\n\nAssim que tratar as informações criar um texto simples e informativo do que foi recebido para enviar via mensagem para o telegram e realizar o envio utilizando a tools \"Telegram\"."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        420,
+        20
+      ],
+      "id": "b87a4e96-aceb-492e-be03-c71620b1201b",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {
+          "responseFormat": "text"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        300
+      ],
+      "id": "32b74b68-3fc4-4584-9460-ba21ad2583ae",
+      "name": "OpenAI Chat Model",
+      "notesInFlow": false,
+      "credentials": {
+        "openAiApi": {
+          "id": "08bccec2-8681-4021-a829-bd6d551d2f15",
+          "name": "OpenAIAPI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "chatId": "=153908829",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Text', ``, 'string') }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTool",
+      "typeVersion": 1.2,
+      "position": [
+        540,
+        300
+      ],
+      "id": "9c941dca-7f44-4ba5-a916-8eb4e1cc9949",
+      "name": "Telegram",
+      "webhookId": "5185d588-2277-4e50-93c1-40f6c28f0ad6",
+      "credentials": {
+        "telegramApi": {
+          "id": "u9fbphoB38MBNKsB",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"branch\": \"{{ $json.push.changes[0].new.name }}\",\n  \"author\": \"{{ $json.push.changes[0].new.target.author.raw.split('<')[0].trim() }}\",\n  \"date\": \"{{ $json.push.changes[0].new.target.date }}\",\n  \"message\": \"{{ $json.push.changes[0].new.target.message.replace(/\\n/g, '') }}\",\n  \"commit\": {\n    \"hash\": \"{{ $json.push.changes[0].new.target.hash }}\",\n    \"url\": \"{{ $json.push.changes[0].new.target.links.html.href }}\"\n  },\n  \"last\": {\n    \"author\": \"{{ $json.push.changes[0].old.target.author.raw.split('<')[0].trim() }}\",\n    \"date\": \"{{ $json.push.changes[0].old.target.date }}\",\n    \"message\": \"{{ $json.push.changes[0].old.target.message.replace(/\\n/g, '') }}\",\n    \"commit\": {\n      \"hash\": \"{{ $json.push.changes[0].old.target.hash }}\",\n      \"url\": \"{{ $json.push.changes[0].old.target.links.html.href }}\"\n    }\n  }\n}",
+        "options": {
+          "dotNotation": true
+        }
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        20,
+        20
+      ],
+      "id": "1f4a5e00-0e2c-42a0-9f06-f97605f96026",
+      "name": "Edit Fields"
+    }
+  ],
+  "connections": {
+    "Bitbucket Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Sao_Paulo",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": {
+    "node:Bitbucket Trigger": {}
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {
+    "Bitbucket Trigger": [
+      {
+        "json": {
+          "push": {
+            "changes": [
+              {
+                "old": {
+                  "name": "main",
+                  "target": {
+                    "type": "commit",
+                    "hash": "66c0ec6bcfad97cc28019c674a41c15c7352d3bd",
+                    "date": "2025-02-27T14:07:25+00:00",
+                    "author": {
+                      "type": "author",
+                      "raw": "Fabio Kozlowski <fabio@studiowoz.com.br>",
+                      "user": {
+                        "display_name": "Studio Woz",
+                        "links": {
+                          "self": {
+                            "href": "https://api.bitbucket.org/2.0/users/%7B937b2cf6-dd8e-4885-8cf6-b597f6bf27bb%7D"
+                          },
+                          "avatar": {
+                            "href": "https://secure.gravatar.com/avatar/1b0955456a825dc91d51fdcd158e2ad1?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FSW-2.png"
+                          },
+                          "html": {
+                            "href": "https://bitbucket.org/%7B937b2cf6-dd8e-4885-8cf6-b597f6bf27bb%7D/"
+                          }
+                        },
+                        "type": "user",
+                        "uuid": "{937b2cf6-dd8e-4885-8cf6-b597f6bf27bb}",
+                        "account_id": "5fc94000aa1d30006f6c84b9",
+                        "nickname": "Studio Woz"
+                      }
+                    },
+                    "committer": {},
+                    "message": "Teste 004\n",
+                    "summary": {
+                      "type": "rendered",
+                      "raw": "Teste 004\n",
+                      "markup": "markdown",
+                      "html": "<p>Teste 004</p>"
+                    },
+                    "links": {
+                      "self": {
+                        "href": "https://api.bitbucket.org/2.0/repositories/studiowoz/teste-n8n/commit/66c0ec6bcfad97cc28019c674a41c15c7352d3bd"
+                      },
+                      "html": {
+                        "href": "https://bitbucket.org/studiowoz/teste-n8n/commits/66c0ec6bcfad97cc28019c674a41c15c7352d3bd"
+                      }
+                    },
+                    "parents": [
+                      {
+                        "hash": "41812a5f88b6058c0ba1a95e36cf22832adf209b",
+                        "links": {
+                          "self": {
+                            "href": "https://api.bitbucket.org/2.0/repositories/studiowoz/teste-n8n/commit/41812a5f88b6058c0ba1a95e36cf22832adf209b"
+                          },
+                          "html": {
+                            "href": "https://bitbucket.org/studiowoz/teste-n8n/commits/41812a5f88b6058c0ba1a95e36cf22832adf209b"
+                          }
+                        },
+                        "type": "commit"
+                      }
+                    ],
+                    "rendered": {},
+                    "properties": {}
+                  },
+                  "links": {
+                    "self": {
+                      "href": "https://api.bitbucket.org/2.0/repositories/studiowoz/teste-n8n/refs/branches/main"
+                    },
+                    "commits": {
+                      "href": "https://api.bitbucket.org/2.0/repositories/studiowoz/teste-n8n/commits/main"
+                    },
+                    "html": {
+                      "href": "https://bitbucket.org/studiowoz/teste-n8n/branch/main"
+                    },
+                    "pullrequest_create": {
+                      "href": "https://bitbucket.org/studiowoz/teste-n8n/pull-requests/new?source=main&t=1"
+                    }
+                  },
+                  "type": "branch",
+                  "merge_strategies": [
+                    "merge_commit",
+                    "squash",
+                    "fast_forward",
+                    "squash_fast_forward",
+                    "rebase_fast_forward",
+                    "rebase_merge"
+                  ],
+                  "sync_strategies": [
+                    "merge_commit",
+                    "rebase"
+                  ],
+                  "default_merge_strategy": "merge_commit"
+                },
+                "new": {
+                  "name": "main",
+                  "target": {
+                    "type": "commit",
+                    "hash": "23479b59d98c1d95056cee2cf529f41f0a60ea2d",
+                    "date": "2025-02-27T14:08:06+00:00",
+                    "author": {
+                      "type": "author",
+                      "raw": "Fabio Kozlowski <fabio@studiowoz.com.br>",
+                      "user": {
+                        "display_name": "Studio Woz",
+                        "links": {
+                          "self": {
+                            "href": "https://api.bitbucket.org/2.0/users/%7B937b2cf6-dd8e-4885-8cf6-b597f6bf27bb%7D"
+                          },
+                          "avatar": {
+                            "href": "https://secure.gravatar.com/avatar/1b0955456a825dc91d51fdcd158e2ad1?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FSW-2.png"
+                          },
+                          "html": {
+                            "href": "https://bitbucket.org/%7B937b2cf6-dd8e-4885-8cf6-b597f6bf27bb%7D/"
+                          }
+                        },
+                        "type": "user",
+                        "uuid": "{937b2cf6-dd8e-4885-8cf6-b597f6bf27bb}",
+                        "account_id": "5fc94000aa1d30006f6c84b9",
+                        "nickname": "Studio Woz"
+                      }
+                    },
+                    "committer": {},
+                    "message": "Teste 005\n",
+                    "summary": {
+                      "type": "rendered",
+                      "raw": "Teste 005\n",
+                      "markup": "markdown",
+                      "html": "<p>Teste 005</p>"
+                    },
+                    "links": {
+                      "self": {
+                        "href": "https://api.bitbucket.org/2.0/repositories/studiowoz/teste-n8n/commit/23479b59d98c1d95056cee2cf529f41f0a60ea2d"
+                      },
+                      "html": {
+                        "href": "https://bitbucket.org/studiowoz/teste-n8n/commits/23479b59d98c1d95056cee2cf529f41f0a60ea2d"
+                      }
+                    },
+                    "parents": [
+                      {
+                        "hash": "66c0ec6bcfad97cc28019c674a41c15c7352d3bd",
+                        "links": {
+                          "self": {
+                            "href": "https://api.bitbucket.org/2.0/repositories/studiowoz/teste-n8n/commit/66c0ec6bcfad97cc28019c674a41c15c7352d3bd"
+                          },
+                          "html": {
+                            "href": "https://bitbucket.org/studiowoz/teste-n8n/commits/66c0ec6bcfad97cc28019c674a41c15c7352d3bd"
+                          }
+                        },
+                        "type": "commit"
+                      }
+                    ],
+                    "rendered": {},
+                    "properties": {}
+                  },
+                  "links": {
+                    "self": {
+                      "href": "https://api.bitbucket.org/2.0/repositories/studiowoz/teste-n8n/refs/branches/main"
+                    },
+                    "commits": {
+                      "href": "https://api.bitbucket.org/2.0/repositories/studiowoz/teste-n8n/commits/main"
+                    },
+                    "html": {
+                      "href": "https://bitbucket.org/studiowoz/teste-n8n/branch/main"
+                    },
+                    "pullrequest_create": {
+                      "href": "https://bitbucket.org/studiowoz/teste-n8n/pull-requests/new?source=main&t=1"
+                    }
+                  },
+                  "type": "branch",
+                  "merge_strategies": [
+                    "merge_commit",
+                    "squash",
+                    "fast_forward",
+                    "squash_fast_forward",
+                    "rebase_fast_forward",
+                    "rebase_merge"
+                  ],
+                  "sync_strategies": [
+                    "merge_commit",
+                    "rebase"
+                  ],
+                  "default_merge_strategy": "merge_commit"
+                },
+                "truncated": false,
+                "created": false,
+                "forced": false,
+                "closed": false,
+                "links": {
+                  "commits": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/studiowoz/teste-n8n/commits?include=23479b59d98c1d95056cee2cf529f41f0a60ea2d&exclude=66c0ec6bcfad97cc28019c674a41c15c7352d3bd"
+                  },
+                  "diff": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/studiowoz/teste-n8n/diff/23479b59d98c1d95056cee2cf529f41f0a60ea2d..66c0ec6bcfad97cc28019c674a41c15c7352d3bd"
+                  },
+                  "html": {
+                    "href": "https://bitbucket.org/studiowoz/teste-n8n/branches/compare/23479b59d98c1d95056cee2cf529f41f0a60ea2d..66c0ec6bcfad97cc28019c674a41c15c7352d3bd"
+                  }
+                },
+                "commits": [
+                  {
+                    "type": "commit",
+                    "hash": "23479b59d98c1d95056cee2cf529f41f0a60ea2d",
+                    "date": "2025-02-27T14:08:06+00:00",
+                    "author": {
+                      "type": "author",
+                      "raw": "Fabio Kozlowski <fabio@studiowoz.com.br>",
+                      "user": {
+                        "display_name": "Studio Woz",
+                        "links": {
+                          "self": {
+                            "href": "https://api.bitbucket.org/2.0/users/%7B937b2cf6-dd8e-4885-8cf6-b597f6bf27bb%7D"
+                          },
+                          "avatar": {
+                            "href": "https://secure.gravatar.com/avatar/1b0955456a825dc91d51fdcd158e2ad1?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FSW-2.png"
+                          },
+                          "html": {
+                            "href": "https://bitbucket.org/%7B937b2cf6-dd8e-4885-8cf6-b597f6bf27bb%7D/"
+                          }
+                        },
+                        "type": "user",
+                        "uuid": "{937b2cf6-dd8e-4885-8cf6-b597f6bf27bb}",
+                        "account_id": "5fc94000aa1d30006f6c84b9",
+                        "nickname": "Studio Woz"
+                      }
+                    },
+                    "committer": {},
+                    "message": "Teste 005\n",
+                    "summary": {
+                      "type": "rendered",
+                      "raw": "Teste 005\n",
+                      "markup": "markdown",
+                      "html": "<p>Teste 005</p>"
+                    },
+                    "links": {
+                      "self": {
+                        "href": "https://api.bitbucket.org/2.0/repositories/studiowoz/teste-n8n/commit/23479b59d98c1d95056cee2cf529f41f0a60ea2d"
+                      },
+                      "html": {
+                        "href": "https://bitbucket.org/studiowoz/teste-n8n/commits/23479b59d98c1d95056cee2cf529f41f0a60ea2d"
+                      },
+                      "diff": {
+                        "href": "https://api.bitbucket.org/2.0/repositories/studiowoz/teste-n8n/diff/23479b59d98c1d95056cee2cf529f41f0a60ea2d"
+                      },
+                      "approve": {
+                        "href": "https://api.bitbucket.org/2.0/repositories/studiowoz/teste-n8n/commit/23479b59d98c1d95056cee2cf529f41f0a60ea2d/approve"
+                      },
+                      "comments": {
+                        "href": "https://api.bitbucket.org/2.0/repositories/studiowoz/teste-n8n/commit/23479b59d98c1d95056cee2cf529f41f0a60ea2d/comments"
+                      },
+                      "statuses": {
+                        "href": "https://api.bitbucket.org/2.0/repositories/studiowoz/teste-n8n/commit/23479b59d98c1d95056cee2cf529f41f0a60ea2d/statuses"
+                      },
+                      "patch": {
+                        "href": "https://api.bitbucket.org/2.0/repositories/studiowoz/teste-n8n/patch/23479b59d98c1d95056cee2cf529f41f0a60ea2d"
+                      }
+                    },
+                    "parents": [
+                      {
+                        "hash": "66c0ec6bcfad97cc28019c674a41c15c7352d3bd",
+                        "links": {
+                          "self": {
+                            "href": "https://api.bitbucket.org/2.0/repositories/studiowoz/teste-n8n/commit/66c0ec6bcfad97cc28019c674a41c15c7352d3bd"
+                          },
+                          "html": {
+                            "href": "https://bitbucket.org/studiowoz/teste-n8n/commits/66c0ec6bcfad97cc28019c674a41c15c7352d3bd"
+                          }
+                        },
+                        "type": "commit"
+                      }
+                    ],
+                    "rendered": {},
+                    "properties": {}
+                  }
+                ]
+              }
+            ]
+          },
+          "repository": {
+            "type": "repository",
+            "full_name": "studiowoz/teste-n8n",
+            "links": {
+              "self": {
+                "href": "https://api.bitbucket.org/2.0/repositories/studiowoz/teste-n8n"
+              },
+              "html": {
+                "href": "https://bitbucket.org/studiowoz/teste-n8n"
+              },
+              "avatar": {
+                "href": "https://bytebucket.org/ravatar/%7B48e7b69b-3891-4e19-ad90-c0b47aab3381%7D?ts=default"
+              }
+            },
+            "name": "Teste n8n",
+            "scm": "git",
+            "website": null,
+            "owner": {
+              "display_name": "StudioWoz",
+              "links": {
+                "self": {
+                  "href": "https://api.bitbucket.org/2.0/workspaces/%7B1472613c-88f2-48f5-811a-c9af855cbd6b%7D"
+                },
+                "avatar": {
+                  "href": "https://bitbucket.org/account/studiowoz/avatar/"
+                },
+                "html": {
+                  "href": "https://bitbucket.org/%7B1472613c-88f2-48f5-811a-c9af855cbd6b%7D/"
+                }
+              },
+              "type": "team",
+              "uuid": "{1472613c-88f2-48f5-811a-c9af855cbd6b}",
+              "username": "studiowoz"
+            },
+            "workspace": {
+              "type": "workspace",
+              "uuid": "{1472613c-88f2-48f5-811a-c9af855cbd6b}",
+              "name": "StudioWoz",
+              "slug": "studiowoz",
+              "links": {
+                "avatar": {
+                  "href": "https://bitbucket.org/workspaces/studiowoz/avatar/?ts=1740664772"
+                },
+                "html": {
+                  "href": "https://bitbucket.org/studiowoz/"
+                },
+                "self": {
+                  "href": "https://api.bitbucket.org/2.0/workspaces/studiowoz"
+                }
+              }
+            },
+            "is_private": true,
+            "project": {
+              "type": "project",
+              "key": "N8N",
+              "uuid": "{4f9f3dc6-7412-4466-b486-0fcd9999d226}",
+              "name": "n8n",
+              "links": {
+                "self": {
+                  "href": "https://api.bitbucket.org/2.0/workspaces/studiowoz/projects/N8N"
+                },
+                "html": {
+                  "href": "https://bitbucket.org/studiowoz/workspace/projects/N8N"
+                },
+                "avatar": {
+                  "href": "https://bitbucket.org/studiowoz/workspace/projects/N8N/avatar/32?ts=1740663782"
+                }
+              }
+            },
+            "uuid": "{48e7b69b-3891-4e19-ad90-c0b47aab3381}",
+            "parent": null
+          },
+          "actor": {
+            "display_name": "Cymon Kozlowski",
+            "links": {
+              "self": {
+                "href": "https://api.bitbucket.org/2.0/users/%7B7c2a9f0b-8ef7-4565-a757-8e8eef16f544%7D"
+              },
+              "avatar": {
+                "href": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/557058:7ea11e8a-0ba6-4252-bc57-2854ce8d5410/67e4ad48-538d-4a50-a034-75be23553adf/128"
+              },
+              "html": {
+                "href": "https://bitbucket.org/%7B7c2a9f0b-8ef7-4565-a757-8e8eef16f544%7D/"
+              }
+            },
+            "type": "user",
+            "uuid": "{7c2a9f0b-8ef7-4565-a757-8e8eef16f544}",
+            "account_id": "557058:7ea11e8a-0ba6-4252-bc57-2854ce8d5410",
+            "nickname": "cymonbr"
+          }
+        }
+      }
+    ]
+  },
+  "versionId": "f34abd9d-71e2-4bfb-9c3f-5a944dac6b0e",
+  "triggerCount": 1,
+  "tags": [
+    {
+      "createdAt": "2025-03-05T13:34:39.222Z",
+      "updatedAt": "2025-03-05T13:34:39.222Z",
+      "id": "UE4oQhTDA6BvkRhy",
+      "name": "Test"
+    },
+    {
+      "createdAt": "2025-03-05T13:34:58.338Z",
+      "updatedAt": "2025-03-05T13:34:58.338Z",
+      "id": "YOo3NFCN58B7hJ3d",
+      "name": "Telegram"
+    },
+    {
+      "createdAt": "2025-03-05T13:34:50.973Z",
+      "updatedAt": "2025-03-05T13:35:08.374Z",
+      "id": "lGn2Uf751NPNbxkc",
+      "name": "Bitbucket"
+    }
+  ]
+}

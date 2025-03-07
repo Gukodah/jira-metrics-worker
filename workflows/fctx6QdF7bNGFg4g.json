@@ -1,0 +1,98 @@
+{
+  "createdAt": "2025-03-05T22:21:24.506Z",
+  "updatedAt": "2025-03-06T13:13:29.000Z",
+  "id": "fctx6QdF7bNGFg4g",
+  "name": "[Metrics] Get Projects",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "fdf4a82a-8841-4132-a85a-ad1e25ec008d",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "select distinct name from projects",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        220,
+        0
+      ],
+      "id": "ffc44014-28ad-4b8e-bcb2-6b22c9a8c32f",
+      "name": "MySQL",
+      "credentials": {
+        "mySql": {
+          "id": "7c13c9ed-3a08-4145-9c15-d413271b263c",
+          "name": "MySQLCredentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\n\nreturn {project: $input.all().map(item => ({name: item.json.name}))};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "id": "6a91c31a-4cd3-47ce-8d23-a23302b4989e",
+      "name": "Code"
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "MySQL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MySQL": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "6e1b5361-6aef-4be2-a68f-fb56002c959f",
+  "triggerCount": 0,
+  "tags": [
+    {
+      "createdAt": "2025-03-05T13:39:10.693Z",
+      "updatedAt": "2025-03-05T13:40:13.487Z",
+      "id": "gISbWmOl5ugOXvEl",
+      "name": "Metrics"
+    }
+  ]
+}

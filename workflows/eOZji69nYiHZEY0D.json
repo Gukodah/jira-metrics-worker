@@ -1,0 +1,331 @@
+{
+  "createdAt": "2025-03-05T17:50:22.656Z",
+  "updatedAt": "2025-03-05T21:30:33.000Z",
+  "id": "eOZji69nYiHZEY0D",
+  "name": "[Metrics] Save Changelog Data DB",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "e56c8c6c-67c5-42bf-8051-66f9393898c3",
+      "name": "Data"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "9E7ZrFGJNnGz9OaJ",
+          "mode": "list",
+          "cachedResultName": "[Metrics] Database"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        220,
+        0
+      ],
+      "id": "3d486171-dbdc-4c92-8fc5-aba455a74d84",
+      "name": "Issues Data",
+      "notesInFlow": true,
+      "notes": "Get Issues Data DB"
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        440,
+        0
+      ],
+      "id": "833db34b-28ae-4401-ad81-9ddf0ef4ac1e",
+      "name": "Loop Over Items",
+      "retryOnFail": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "changelog",
+        "issueKey": "={{ $json.id }}",
+        "limit": 100
+      },
+      "type": "n8n-nodes-base.jira",
+      "typeVersion": 1,
+      "position": [
+        660,
+        100
+      ],
+      "id": "79f11b0d-5699-488e-92cf-a09dfd5b082a",
+      "name": "Changelog",
+      "credentials": {
+        "jiraSoftwareCloudApi": {
+          "id": "05b5dd33-c307-44d5-9a77-a81ed5c7c392",
+          "name": "JiraSWCloudAccount"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const changelogs = $input.all();\n\n// Format Date\nconst pad = (num) => num.toString().padStart(2, \"0\");\n\nconst statusChanges = [];\nchangelogs.map(item => {\n  let statusItems = item.json.items.filter(el => el.field === \"status\");\n  if (statusItems.length===0) return;\n\n  let dateBase = new Date(item.json.created);\n  let created_at = `${dateBase.getFullYear()}-${pad(dateBase.getMonth() + 1)}-${pad(dateBase.getDate())} ${pad(dateBase.getHours())}:${pad(dateBase.getMinutes())}:${pad(dateBase.getSeconds())}`;\n\n  // Loop over status items\n  statusItems.map(status => {\n    statusChanges.push({\n      issue_id: $('Loop Over Items').first().json.id,\n      field: status.field,\n      from: status.fromString,\n      to: status.toString,\n      created_at: created_at\n    })\n  })\n})\n\nreturn statusChanges;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        100
+      ],
+      "id": "4a0336ab-e6fa-4557-834a-56bfeab8b12a",
+      "name": "Code",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "deleteTable",
+        "table": {
+          "__rl": true,
+          "value": "issues_changelog",
+          "mode": "list",
+          "cachedResultName": "issues_changelog"
+        },
+        "deleteCommand": "delete",
+        "where": {
+          "values": [
+            {
+              "column": "issue_id",
+              "value": "={{ $('Loop Over Items').first().json.id }}"
+            }
+          ]
+        },
+        "combineConditions": "=AND",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        1380,
+        -80
+      ],
+      "id": "c6b09136-abdf-42a1-b063-c36c1fcaddd7",
+      "name": "Delete",
+      "notesInFlow": true,
+      "credentials": {
+        "mySql": {
+          "id": "7c13c9ed-3a08-4145-9c15-d413271b263c",
+          "name": "MySQLCredentials"
+        }
+      },
+      "notes": "Delete Old Data"
+    },
+    {
+      "parameters": {
+        "table": {
+          "__rl": true,
+          "value": "issues_changelog",
+          "mode": "list",
+          "cachedResultName": "issues_changelog"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        1380,
+        80
+      ],
+      "id": "2d64a762-04e0-4125-b306-8f5cde3433bc",
+      "name": "Save",
+      "notesInFlow": true,
+      "credentials": {
+        "mySql": {
+          "id": "7c13c9ed-3a08-4145-9c15-d413271b263c",
+          "name": "MySQLCredentials"
+        }
+      },
+      "notes": "Add new Data"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "91877232-32a9-45c3-bcca-451f342eb4a7",
+              "leftValue": "={{ $input.item.json.isEmpty() }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1100,
+        100
+      ],
+      "id": "c47f6c6a-8db6-49bf-ad92-db03568fb2d6",
+      "name": "If"
+    }
+  ],
+  "connections": {
+    "Data": {
+      "main": [
+        [
+          {
+            "node": "Issues Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Issues Data": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Changelog",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Changelog": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete": {
+      "main": [
+        []
+      ]
+    },
+    "Save": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Delete",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Save",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "afdf9a0c-29ff-4b9d-98db-a61c8f2d36aa",
+  "triggerCount": 0,
+  "tags": [
+    {
+      "createdAt": "2025-03-05T13:44:22.015Z",
+      "updatedAt": "2025-03-05T13:44:22.015Z",
+      "id": "FtaJRvGLXbfWWNb1",
+      "name": "Mysql"
+    },
+    {
+      "createdAt": "2025-03-05T13:39:10.693Z",
+      "updatedAt": "2025-03-05T13:40:13.487Z",
+      "id": "gISbWmOl5ugOXvEl",
+      "name": "Metrics"
+    },
+    {
+      "createdAt": "2025-03-05T13:40:22.532Z",
+      "updatedAt": "2025-03-05T13:40:22.532Z",
+      "id": "y0f4A3eacVzC9C7A",
+      "name": "Jira"
+    }
+  ]
+}

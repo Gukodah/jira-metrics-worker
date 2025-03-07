@@ -1,0 +1,13 @@
+{
+  "name": "jira-metrics-worker",
+  "version": "1.0.0",
+  "description": "This repository contains a **n8n** service configured with **MongoDB** and **MySQL** as supporting databases. The setup includes automatic credential creation and workflow imports, along with a **pre-commit hook** to ensure workflows are correctly placed in the credentials folder before committing.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "commit": "sh scripts/commit.sh"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

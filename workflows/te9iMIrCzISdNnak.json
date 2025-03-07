@@ -1,0 +1,91 @@
+{
+  "createdAt": "2025-02-27T18:52:54.802Z",
+  "updatedAt": "2025-02-27T21:19:23.000Z",
+  "id": "te9iMIrCzISdNnak",
+  "name": "Jira Data",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "changelog",
+        "issueKey": "12970"
+      },
+      "type": "n8n-nodes-base.jira",
+      "typeVersion": 1,
+      "position": [
+        220,
+        0
+      ],
+      "id": "deba8c21-5abe-48b9-8409-4a99cb50df8c",
+      "name": "Jira Software",
+      "credentials": {
+        "jiraSoftwareCloudApi": {
+          "id": "05b5dd33-c307-44d5-9a77-a81ed5c7c392",
+          "name": "JiraSWCloudAccount"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "d1447120-6e16-45a0-b943-5a3dc09699db",
+      "name": "When clicking ‘Test workflow’"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "options": {
+          "jql": "project=\"AI Flows\""
+        }
+      },
+      "type": "n8n-nodes-base.jira",
+      "typeVersion": 1,
+      "position": [
+        220,
+        -200
+      ],
+      "id": "a1a636ec-bd35-4f6a-9d49-02abb0402f8d",
+      "name": "Jira Software1",
+      "credentials": {
+        "jiraSoftwareCloudApi": {
+          "id": "05b5dd33-c307-44d5-9a77-a81ed5c7c392",
+          "name": "JiraSWCloudAccount"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "Jira Software",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Jira Software": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "a7cf2451-cf23-4ece-9ca9-c258f3aeb0e6",
+  "triggerCount": 0,
+  "tags": []
+}

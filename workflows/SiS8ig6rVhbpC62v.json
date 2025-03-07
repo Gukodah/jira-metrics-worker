@@ -1,0 +1,137 @@
+{
+  "createdAt": "2025-03-05T17:32:43.645Z",
+  "updatedAt": "2025-03-05T19:40:41.000Z",
+  "id": "SiS8ig6rVhbpC62v",
+  "name": "[Metrics] Main",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 10
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -40,
+        0
+      ],
+      "id": "773ee411-fc7b-4c56-963b-ba1e6ce097c6",
+      "name": "Cron Hours"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "ywBnUp85y3ZSIDos",
+          "mode": "list",
+          "cachedResultName": "[Metrics] Jira Data - Database"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        180,
+        0
+      ],
+      "id": "288731c3-a2be-4e7b-8700-64251b266638",
+      "name": "Database",
+      "notesInFlow": true,
+      "notes": "Save Issues in DB"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "eOZji69nYiHZEY0D",
+          "mode": "list",
+          "cachedResultName": "[Metrics] Issues Changelog Data"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        400,
+        0
+      ],
+      "id": "fe48a94d-42d2-4383-879f-6476c3662d68",
+      "name": "Changelog Data",
+      "notesInFlow": true,
+      "notes": "Save Changelog in DB"
+    }
+  ],
+  "connections": {
+    "Cron Hours": {
+      "main": [
+        [
+          {
+            "node": "Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Database": {
+      "main": [
+        [
+          {
+            "node": "Changelog Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": {
+    "node:Cron Hours": {
+      "recurrenceRules": []
+    }
+  },
+  "meta": null,
+  "pinData": {},
+  "versionId": "185513cb-af02-46a9-8c8d-e2103f16390b",
+  "triggerCount": 1,
+  "tags": [
+    {
+      "createdAt": "2025-03-05T13:39:10.693Z",
+      "updatedAt": "2025-03-05T13:40:13.487Z",
+      "id": "gISbWmOl5ugOXvEl",
+      "name": "Metrics"
+    },
+    {
+      "createdAt": "2025-03-05T13:40:22.532Z",
+      "updatedAt": "2025-03-05T13:40:22.532Z",
+      "id": "y0f4A3eacVzC9C7A",
+      "name": "Jira"
+    }
+  ]
+}

@@ -1,0 +1,302 @@
+{
+  "createdAt": "2025-03-05T15:31:31.647Z",
+  "updatedAt": "2025-03-06T17:02:06.000Z",
+  "id": "9E7ZrFGJNnGz9OaJ",
+  "name": "[Metrics] Get Data DB",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "bed4ac49-1020-4e88-8860-57be44ef74ae",
+      "name": "Get Data and Init"
+    },
+    {
+      "parameters": {
+        "jsCode": "const issues = $input.all();\n\nlet ret = [];\nissues.map(el => {\n  let item = {\n    id: el.json.id,\n    summary: el.json.summary,\n    description: el.json.description,\n    type: el.json.type,\n    priority: el.json.priority,\n    status: el.json.status,\n    project: {\n      id: el.json.project_id,\n      name: el.json.project_name,\n      type: el.json.project_type\n    },\n    sprints: JSON.parse(el.json.sprints),\n    reporter: {\n      id: el.json.reporter_id,\n      name: el.json.reporter_name,\n      mail: el.json.reporter_mail\n    },\n    assignee: {\n      id: el.json.assignee_id,\n      name: el.json.assignee_name,\n      mail: el.json.assignee_mail\n    },\n    created: el.json.created_at\n  };\n\n  ret.push(item);\n})\n\nreturn {issues: ret};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        180
+      ],
+      "id": "da170c7f-f43f-4732-aea5-6b76419f8c1a",
+      "name": "Issues Data",
+      "notesInFlow": true,
+      "notes": "Treat Issues Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "return {sprints: $input.all().map(item => ({name: item.json.name}))};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "id": "d2f3af39-7f1f-408d-863a-86c1bff6f3db",
+      "name": "Sprints Name",
+      "notesInFlow": true,
+      "notes": "Get Sprints Names"
+    },
+    {
+      "parameters": {
+        "jsCode": "return {projects: $input.all().map(item => ({name: item.json.name}))};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        -180
+      ],
+      "id": "ba2b6a5a-4730-4838-96e4-fb196a637d17",
+      "name": "Projects Name",
+      "notesInFlow": true,
+      "notes": "Get Projects Names"
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": {
+          "__rl": true,
+          "value": "sprints",
+          "mode": "list",
+          "cachedResultName": "sprints"
+        },
+        "returnAll": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        220,
+        0
+      ],
+      "id": "ca695767-a245-47a8-bf48-ce22b7f51b91",
+      "name": "Sprints",
+      "notesInFlow": true,
+      "credentials": {
+        "mySql": {
+          "id": "7c13c9ed-3a08-4145-9c15-d413271b263c",
+          "name": "MySQLCredentials"
+        }
+      },
+      "notes": "Get Sprints List"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    iss.id,\n    pjt.id AS `project_id`,\n    pjt.`name` AS `project_name`,\n    pjt.`type` AS `project_type`,\n    rpt.id AS `reporter_id`,\n    rpt.`name` AS `reporter_name`,\n    rpt.mail AS `reporter_mail`,\n    asg.id AS `assignee_id`,\n    asg.`name` AS `assignee_name`,\n    asg.mail AS `assignee_mail`,\n    iss.`status`,\n    iss.`type`,\n    iss.`priority`,\n    iss.summary,\n    iss.`description`,\n    iss.created_at,\n    (\n        SELECT\n            JSON_ARRAYAGG(\n                JSON_OBJECT(\n                    'id', sps.id,\n                    'name', sps.name,\n                    'state', sps.state,\n                    'startDate', sps.startDate,\n                    'endDate', sps.endDate\n                )\n            ) AS json_sprints\n        FROM\n            sprints_issues AS sis\n        INNER JOIN sprints sps ON sps.id = sis.sprint_id\n        WHERE\n            sis.issue_id = iss.id\n    ) AS `sprints`\nFROM\n    issues AS iss\nINNER JOIN projects AS pjt ON pjt.id = iss.project_id\nINNER JOIN users AS rpt ON rpt.id = iss.reporter_id\nINNER JOIN users AS asg ON asg.id = iss.assignee_id;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        220,
+        180
+      ],
+      "id": "c9384ee1-38e0-4df4-8eff-885b6c61bbf5",
+      "name": "Issues",
+      "notesInFlow": true,
+      "credentials": {
+        "mySql": {
+          "id": "7c13c9ed-3a08-4145-9c15-d413271b263c",
+          "name": "MySQLCredentials"
+        }
+      },
+      "notes": "Get Issues List"
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": {
+          "__rl": true,
+          "value": "projects",
+          "mode": "list",
+          "cachedResultName": "projects"
+        },
+        "returnAll": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        220,
+        -180
+      ],
+      "id": "9f0a1aae-d1f0-4fde-ba59-86894c2e6c0f",
+      "name": "Projects",
+      "notesInFlow": true,
+      "credentials": {
+        "mySql": {
+          "id": "7c13c9ed-3a08-4145-9c15-d413271b263c",
+          "name": "MySQLCredentials"
+        }
+      },
+      "notes": "Get Projects List"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        680,
+        0
+      ],
+      "id": "32eec1b6-1275-43af-b1b8-12172d651942",
+      "name": "Merge Data",
+      "notesInFlow": true,
+      "notes": "Return Data in One Array"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nreturn {\n  data: {\n    projects: items[0].json.projects,\n    sprints: items[1].json.sprints,\n    issues: items[2].json.issues\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        0
+      ],
+      "id": "99131bfa-fcb4-467c-b5e1-8488cce0c214",
+      "name": "Treat Data",
+      "notesInFlow": true,
+      "notes": "Treat Return Data"
+    }
+  ],
+  "connections": {
+    "Get Data and Init": {
+      "main": [
+        [
+          {
+            "node": "Issues",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Sprints",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Projects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Issues": {
+      "main": [
+        [
+          {
+            "node": "Issues Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Projects": {
+      "main": [
+        [
+          {
+            "node": "Projects Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sprints": {
+      "main": [
+        [
+          {
+            "node": "Sprints Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sprints Name": {
+      "main": [
+        [
+          {
+            "node": "Merge Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Projects Name": {
+      "main": [
+        [
+          {
+            "node": "Merge Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Issues Data": {
+      "main": [
+        [
+          {
+            "node": "Merge Data",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Merge Data": {
+      "main": [
+        [
+          {
+            "node": "Treat Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "d100f738-b54e-47da-a7a5-82ac918d75ad",
+  "triggerCount": 0,
+  "tags": [
+    {
+      "createdAt": "2025-03-05T13:44:22.015Z",
+      "updatedAt": "2025-03-05T13:44:22.015Z",
+      "id": "FtaJRvGLXbfWWNb1",
+      "name": "Mysql"
+    },
+    {
+      "createdAt": "2025-03-05T13:39:10.693Z",
+      "updatedAt": "2025-03-05T13:40:13.487Z",
+      "id": "gISbWmOl5ugOXvEl",
+      "name": "Metrics"
+    }
+  ]
+}
