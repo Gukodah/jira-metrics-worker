@@ -1,6 +1,6 @@
 {
   "createdAt": "2025-03-05T13:39:04.157Z",
-  "updatedAt": "2025-03-06T18:42:51.000Z",
+  "updatedAt": "2025-03-06T21:05:39.000Z",
   "id": "etFvBhy2kwrf9kiK",
   "name": "[Metrics] Robot",
   "active": false,
@@ -25,7 +25,7 @@
       "name": "Brain",
       "credentials": {
         "openAiApi": {
-          "id": "08bccec2-8681-4021-a829-bd6d551d2f15",
+          "id": "F0DMUDksvXoXZ6gD",
           "name": "OpenAIAPI"
         }
       }
@@ -33,7 +33,7 @@
     {
       "parameters": {
         "options": {
-          "systemMessage": "You are an amazing person.\n\nYou will get metrics for us.\n\nYou will always call project names tool and sprint names tool before executing metrics tool. You can not call metrics tool with not available names."
+          "systemMessage": "=You are an intelligent data analysis agent within the n8n automation platform. Your primary function is to extract, process, and present project management metrics. You possess the following capabilities:\n\n**Data Retrieval:**\n\n* You can retrieve information about project issues, sprint names, and project names.\n* You **must** utilize the data retrieval tool before attempting any metric calculations.\n* You cannot execute metric calculations on data that has not been successfully retrieved.\n\n**Metric Calculations:**\n\n* You are capable of calculating various project management metrics based on the retrieved data.\n* You can only execute metric calculations when provided with valid and available project, sprint, or issue identifiers.\n\n**Data Presentation:**\n\n* You can generate Google Sheets files containing the calculated metrics.\n* Upon generation, you will provide the Google Sheets URL for access.\n* You may call the Google Sheets generation tool independently, without requiring prior data retrieval or metric calculations, for example, to create a template or a blank report.\n\n**Operational Guidelines:**\n\n* Prioritize accuracy and efficiency in all operations.\n* When responding, clearly indicate the actions taken and the results obtained.\n* If a requested action is impossible, explain why and suggest alternative solutions.\n* Always ensure the data you are using is up to date.\n* Strive to provide clear, concise, and actionable outputs."
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -151,7 +151,7 @@
     {
       "parameters": {
         "name": "export_csv",
-        "description": "call this tool to generate google sheets with metrics",
+        "description": "call this tool to generate google sheets with metrics.\n\nthis tool will calculate metrics inside the workflow. You don't have to call other tools to calculate metrics or get issues, project names and sprint names, to use this tool.",
         "workflowId": {
           "__rl": true,
           "value": "7I55lUXToC5of5HH",
@@ -270,7 +270,7 @@
     "templateCredsSetupCompleted": true
   },
   "pinData": {},
-  "versionId": "588787e3-744a-464e-b7e9-81ed6db63901",
+  "versionId": "a51cbd5c-c635-49cd-aa8b-8a38c22b2e2d",
   "triggerCount": 2,
   "tags": [
     {

@@ -1,6 +1,6 @@
 {
   "createdAt": "2025-03-05T21:30:59.344Z",
-  "updatedAt": "2025-03-05T22:35:03.000Z",
+  "updatedAt": "2025-03-07T21:50:00.000Z",
   "id": "kYqeikfcU9t0hVfk",
   "name": "[Metrics] Calculate",
   "active": false,
@@ -14,6 +14,10 @@
             },
             {
               "name": "SprintName"
+            },
+            {
+              "name": "issues",
+              "type": "boolean"
             }
           ]
         }
@@ -30,7 +34,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT\n    i.id AS issue_id,\n    i.summary AS issue_summary,\n    p.name AS project_name,\n    s.name AS sprint_name,\n    i.priority AS issue_priority,\n    i.type AS issue_type,\n    i.`status`,\n    (\n        SELECT\n            created_at\n        FROM\n            issues_changelog\n        WHERE\n            `to` = 'In Progress'\n            AND issue_id = i.id\n        ORDER BY\n            created_at DESC\n        LIMIT\n            1\n    ) AS in_progress_time,\n    (\n        SELECT\n            created_at\n        FROM\n            issues_changelog\n        WHERE\n            `to` = 'Done'\n            AND issue_id = i.id\n        ORDER BY\n            created_at DESC\n        LIMIT\n            1\n    ) AS done_time\nFROM\n    issues i\n    JOIN projects p ON i.project_id = p.id\n    JOIN sprints_issues si ON i.id = si.issue_id\n    JOIN sprints s ON si.sprint_id = s.id\nWHERE\n    p.name = '{{ $json.projectName }}'\n    AND s.name = '{{ $json.SprintName }}'\nORDER BY\n    i.status;",
+        "query": "SELECT\n    i.id AS issue_id,\n    i.summary AS issue_summary,\n    p.name AS project_name,\n    s.name AS sprint_name,\n    i.priority AS issue_priority,\n    i.type AS issue_type,\n    ass.name AS assignee,\n    i.`status`,\n    (\n        SELECT\n            created_at\n        FROM\n            issues_changelog\n        WHERE\n            `to` = 'In Progress'\n            AND issue_id = i.id\n        ORDER BY\n            created_at DESC\n        LIMIT\n            1\n    ) AS in_progress_time,\n    (\n        SELECT\n            created_at\n        FROM\n            issues_changelog\n        WHERE\n            `to` = 'Done'\n            AND issue_id = i.id\n        ORDER BY\n            created_at DESC\n        LIMIT\n            1\n    ) AS done_time\nFROM\n    issues i\n    JOIN projects p ON i.project_id = p.id\n    JOIN sprints_issues si ON i.id = si.issue_id\n    JOIN sprints s ON si.sprint_id = s.id\n    JOIN users ass ON ass.id = i.assignee_id\nWHERE\n    p.name = '{{ $json.projectName }}'\n    AND s.name = '{{ $json.SprintName }}'\nORDER BY\n    i.status;",
         "options": {}
       },
       "type": "n8n-nodes-base.mySql",
@@ -44,7 +48,7 @@
       "notesInFlow": true,
       "credentials": {
         "mySql": {
-          "id": "7c13c9ed-3a08-4145-9c15-d413271b263c",
+          "id": "rE0S6LnGwawimzHM",
           "name": "MySQLCredentials"
         }
       },
@@ -52,7 +56,7 @@
     },
     {
       "parameters": {
-        "jsCode": "/**\n * Calcula a diferença em horas entre duas datas.\n *\n * @param {Date} startDate - Data de início.\n * @param {Date} endDate - Data de término.\n * @returns {number} - Diferença em horas.\n */\nfunction calculateHoursDifference(startDate, endDate) {\n  if (startDate > endDate) {\n    return 0; // Ou lançar um erro, dependendo do comportamento desejado\n  }\n  const diffInMilliseconds = endDate.getTime() - startDate.getTime();\n  return diffInMilliseconds / (1000 * 60 * 60);\n}\n\n/**\n * Calcula o número de dias úteis entre duas datas.\n *\n * @param {Date} startDate - Data de início.\n * @param {Date} endDate - Data de término.\n * @returns {number} - Número de dias úteis.\n */\nfunction calculateBusinessDays(startDate, endDate) {\n  let businessDays = 0;\n  let currentDate = new Date(startDate);\n\n  while (currentDate <= endDate) {\n    const dayOfWeek = currentDate.getDay();\n    if (dayOfWeek !== 0 && dayOfWeek !== 6) {\n      businessDays++;\n    }\n    currentDate.setDate(currentDate.getDate() + 1);\n  }\n\n  return businessDays;\n}\n\n/**\n * Calcula a média de um array numérico.\n *\n * @param {number[]} array - Array de números.\n * @returns {number|null} - Média dos números ou null se o array estiver vazio.\n */\nfunction calculateMean(array) {\n  if (array.length === 0) {\n    return null;\n  }\n  const sum = array.reduce((acc, value) => acc + value, 0);\n  return sum / array.length;\n}\n\n/**\n * Calcula as horas de trabalho e dias úteis para um item.\n *\n * @param {object} item - Item com dados de tempo.\n * @returns {object|null} - Objeto com horas e dias úteis ou null se inválido.\n */\nfunction calculateWorkingHours(item) {\n  const startDate = new Date(item.json.in_progress_time);\n  const endDate = new Date(item.json.done_time);\n\n  if (startDate > endDate) {\n    return null;\n  }\n\n  const hours = calculateHoursDifference(startDate, endDate);\n  const days = calculateBusinessDays(startDate, endDate);\n\n  return { startDate, endDate, hours, days };\n}\n\n// Início do código principal\nconst items = $input.all();\n\n// 1. Listar todas as prioridades únicas\nconst priorities = [...new Set(items.map(item => item.json.issue_priority))];\n\nconst results = priorities.map(priority => {\n  const filteredItems = items.filter(item => item.json.issue_priority === priority);\n\n  const workingHours = filteredItems\n    .filter(item => item.json.done_time && item.json.in_progress_time)\n    .map(calculateWorkingHours)\n    .filter(item => item !== null);\n\n  if (workingHours.length === 0) {\n    return { priority, workingHours: [], workingHoursMean: null, workingDaysMean: null };\n  }\n\n  const workingHoursMean = calculateMean(workingHours.map(item => item.hours));\n  const workingDaysMean = calculateMean(workingHours.map(item => item.days));\n\n  return { priority, workingHoursMean, workingDaysMean };\n});\n\nconst doneItems = items.filter(item => item.json.done_time);\nconst bugItems = items.filter(item => item.json.issue_type === \"Bug\");\n\nreturn {\n  efficiency: doneItems.length / items.length,\n  quality: bugItems.length / doneItems.length,\n  bugItemsQuantity: bugItems.length,\n  doneItemsQuantity: doneItems.length,\n  totalItemsQuantity: items.length,\n  priorities,\n  results,\n};"
+        "jsCode": "/**\n * Calcula a diferença em horas entre duas datas.\n *\n * @param {Date} startDate - Data de início.\n * @param {Date} endDate - Data de término.\n * @returns {number} - Diferença em horas.\n */\nfunction calculateHoursDifference(startDate, endDate) {\n  if (startDate > endDate) {\n    return 0; // Ou lançar um erro, dependendo do comportamento desejado\n  }\n  const diffInMilliseconds = endDate.getTime() - startDate.getTime();\n  return diffInMilliseconds / (1000 * 60 * 60);\n}\n\n/**\n * Calcula o número de dias úteis entre duas datas.\n *\n * @param {Date} startDate - Data de início.\n * @param {Date} endDate - Data de término.\n * @returns {number} - Número de dias úteis.\n */\nfunction calculateBusinessDays(startDate, endDate) {\n  let businessDays = 0;\n  let currentDate = new Date(startDate);\n\n  while (currentDate <= endDate) {\n    const dayOfWeek = currentDate.getDay();\n    if (dayOfWeek !== 0 && dayOfWeek !== 6) {\n      businessDays++;\n    }\n    currentDate.setDate(currentDate.getDate() + 1);\n  }\n\n  return businessDays;\n}\n\n/**\n * Calcula a média de um array numérico.\n *\n * @param {number[]} array - Array de números.\n * @returns {number|null} - Média dos números ou null se o array estiver vazio.\n */\nfunction calculateMean(array) {\n  if (array.length === 0) {\n    return null;\n  }\n  const sum = array.reduce((acc, value) => acc + value, 0);\n  return sum / array.length;\n}\n\n/**\n * Calcula as horas de trabalho e dias úteis para um item.\n *\n * @param {object} item - Item com dados de tempo.\n * @returns {object|null} - Objeto com horas e dias úteis ou null se inválido.\n */\nfunction calculateWorkingHours(item) {\n  const startDate = new Date(item.json.in_progress_time);\n  const endDate = new Date(item.json.done_time);\n\n  if (startDate > endDate) {\n    return null;\n  }\n\n  const hours = calculateHoursDifference(startDate, endDate);\n  const days = calculateBusinessDays(startDate, endDate);\n\n  return { startDate, endDate, hours, days };\n}\n\n// Início do código principal\nconst items = $input.all();\n\n// 1. Listar todas as prioridades únicas\nconst priorities = [...new Set(items.map(item => item.json.issue_priority))];\n\nconst results = priorities.map(priority => {\n  const filteredItems = items.filter(item => item.json.issue_priority === priority);\n\n  const workingHours = filteredItems\n    .filter(item => item.json.done_time && item.json.in_progress_time)\n    .map(calculateWorkingHours)\n    .filter(item => item !== null);\n\n  if (workingHours.length === 0) {\n    return { priority, workingHours: [], workingHoursMean: null, workingDaysMean: null };\n  }\n\n  const workingHoursMean = calculateMean(workingHours.map(item => item.hours));\n  const workingDaysMean = calculateMean(workingHours.map(item => item.days));\n\n  return { priority, workingHoursMean, workingDaysMean };\n});\n\nconst doneItems = items.filter(item => item.json.done_time);\nconst bugItems = items.filter(item => item.json.issue_type === \"Bug\");\n\nreturn {\n  efficiency: doneItems.length / items.length,\n  quality: (doneItems.length-bugItems.length)/doneItems.length,\n  bugItemsQuantity: bugItems.length,\n  doneItemsQuantity: doneItems.length,\n  totalItemsQuantity: items.length,\n  priorities,\n  results,\n  sprint: $('Data').first().json.SprintName,\n  project: $('Data').first().json.projectName,\n  issues: $('Data').first().json.issues ? items.map(item => item.json) : undefined\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -98,7 +102,7 @@
     "templateCredsSetupCompleted": true
   },
   "pinData": {},
-  "versionId": "a9164cf4-4932-436e-b343-a6110338aa5a",
+  "versionId": "92abade3-f187-4667-ad29-6f29fbfac111",
   "triggerCount": 0,
   "tags": [
     {

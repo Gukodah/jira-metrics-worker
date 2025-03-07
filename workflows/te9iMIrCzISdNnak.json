@@ -20,7 +20,7 @@
       "name": "Jira Software",
       "credentials": {
         "jiraSoftwareCloudApi": {
-          "id": "05b5dd33-c307-44d5-9a77-a81ed5c7c392",
+          "id": "jVWtaY327x6lB0wD",
           "name": "JiraSWCloudAccount"
         }
       }
@@ -53,7 +53,7 @@
       "name": "Jira Software1",
       "credentials": {
         "jiraSoftwareCloudApi": {
-          "id": "05b5dd33-c307-44d5-9a77-a81ed5c7c392",
+          "id": "jVWtaY327x6lB0wD",
           "name": "JiraSWCloudAccount"
         }
       }

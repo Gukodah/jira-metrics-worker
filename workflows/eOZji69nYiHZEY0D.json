@@ -81,7 +81,7 @@
       "name": "Changelog",
       "credentials": {
         "jiraSoftwareCloudApi": {
-          "id": "05b5dd33-c307-44d5-9a77-a81ed5c7c392",
+          "id": "jVWtaY327x6lB0wD",
           "name": "JiraSWCloudAccount"
         }
       }
@@ -132,7 +132,7 @@
       "notesInFlow": true,
       "credentials": {
         "mySql": {
-          "id": "7c13c9ed-3a08-4145-9c15-d413271b263c",
+          "id": "rE0S6LnGwawimzHM",
           "name": "MySQLCredentials"
         }
       },
@@ -159,7 +159,7 @@
       "notesInFlow": true,
       "credentials": {
         "mySql": {
-          "id": "7c13c9ed-3a08-4145-9c15-d413271b263c",
+          "id": "rE0S6LnGwawimzHM",
           "name": "MySQLCredentials"
         }
       },

@@ -26,7 +26,7 @@
       "name": "Google Sheets1",
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "657049dc-bd08-49c1-9a57-bfd7109a4480",
+          "id": "8hHL5Ojv231dHHHX",
           "name": "GoogleSheetsOAuthApi"
         }
       }
@@ -60,7 +60,7 @@
       "name": "Google Sheets",
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "657049dc-bd08-49c1-9a57-bfd7109a4480",
+          "id": "8hHL5Ojv231dHHHX",
           "name": "GoogleSheetsOAuthApi"
         }
       }
