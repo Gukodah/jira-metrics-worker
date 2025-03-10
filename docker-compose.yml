@@ -23,11 +23,13 @@ services:
       GENERIC_TIMEZONE: "UTC"
       N8N_HOST: "localhost"
       N8N_PORT: "5678"
+      N8N_CUSTOM_EXTENSIONS: "/home/node/.n8n/custom/node_modules/custom_nodes"
     volumes:
       - n8n_data:/home/node/.n8n
       - .env:/home/node/.env
       - ./workflows:/home/node/.n8n/workflows
       - ./credentials:/home/node/.n8n/credentials
+      - ./custom_nodes:/home/node/.n8n/custom/node_modules/custom_nodes
     ports:
       - "5678:5678"
 
@@ -47,7 +49,6 @@ services:
     networks:
       n8n_network:
         ipv4_address: 192.168.1.101
-
 
   mariadb:
     image: mariadb:latest
@@ -72,7 +73,6 @@ volumes:
   n8n_data:
   mongo_data:
   mariadb_data:
-
 
 networks:
   n8n_network:
