@@ -1,0 +1,151 @@
+{
+  "name": "[Metrics] Calculate Metrics",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "projectName"
+            },
+            {
+              "name": "sprintName"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "e7a31e0a-70d6-4479-990b-c9d1fdf58696",
+      "name": "Data"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "MGpQr4olBM1JUS4l",
+          "mode": "list",
+          "cachedResultName": "[Metrics] Get Data DB"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "project": "={{ $json.projectName }}"
+          },
+          "matchingColumns": [
+            "project"
+          ],
+          "schema": [
+            {
+              "id": "project",
+              "displayName": "project",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        200,
+        0
+      ],
+      "id": "5767686b-1fd6-450f-94d3-e3e3c40c99c3",
+      "name": "Get Issues DB",
+      "notesInFlow": true,
+      "notes": "List Issues by DB"
+    },
+    {
+      "parameters": {
+        "jsCode": "const issuesDB = $input.first().json.data.issues;\nconst sprint = $('Data').first().json.sprintName ? $('Data').first().json.sprintName : null;\n\nlet issues = issuesDB;\nif (sprint) issues = issues.filter(issue => issue.sprints.some(el => el.name === sprint));\n\nreturn {\n  sprint,\n  issues\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        420,
+        0
+      ],
+      "id": "f2f328ab-1123-4d08-bb20-27f341bd69a8",
+      "name": "Treat Issues",
+      "notesInFlow": true,
+      "notes": "Filter Issues by Sprint"
+    },
+    {
+      "parameters": {
+        "jsCode": "const project = $('Data').first().json.projectName;\nconst sprint = $input.first().json.sprint;\nconst issues = $input.first().json.issues;\n\nconst totalIssues = issues.length;\nconst doneIssues = issues.filter(issue => issue.status === \"Done\").length;\nconst bugIssues = issues.filter(issue => issue.type === \"Bug\").length;\n\n// Cálculo da eficiência\nconst efficiency = doneIssues > 0 \n    ? Math.round((doneIssues / totalIssues) * 10000) / 100\n    : 0;\n\n// Cálculo da qualidade\nconst quality = doneIssues > 0 \n    ? (bugIssues === 0 ? 100 : Math.round((1 - bugIssues / doneIssues) * 10000) / 100)\n    : 0;\n\n// Contar total de issues por prioridade\nconst priorities = issues.reduce((acc, issue) => {\n    acc[issue.priority] = (acc[issue.priority] || 0) + 1;\n    return acc;\n}, {});\n\n// Cálculo do tempo trabalhado\nconst workTimesArray = issues.map(issue => {\n    if (!issue.in_progress_time || !issue.done_time) return null;\n    const start = new Date(issue.in_progress_time);\n    const end = new Date(issue.done_time);\n    const diffMs = end - start;\n\n    // Totalizar as horas corretamente (1 dia = 24 horas)\n    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));\n    const hours = days * 24;\n\n    return {\n        priority: issue.priority,\n        days,\n        hours\n    };\n}).filter(Boolean);\n\n// Somar tempo total de trabalho\nconst totalWorkTime = workTimesArray.reduce((acc, time) => {\n    acc.days += time.days;\n    acc.hours += time.hours;\n    acc.count += 1;\n    return acc;\n}, { days: 0, hours: 0, count: 0 });\n\n// Adicionando as médias no workTimes\ntotalWorkTime.daysPeerIssue = totalWorkTime.count > 0 \n    ? parseFloat((totalWorkTime.days / totalWorkTime.count).toFixed(2)) \n    : 0;\ntotalWorkTime.hourPeerIssue = totalWorkTime.count > 0 \n    ? parseFloat((totalWorkTime.hours / totalWorkTime.count).toFixed(2)) \n    : 0;\n\n// Tempo de trabalho por prioridade e issues done por prioridade\nconst workTimeByPriority = Object.keys(priorities).reduce((acc, priority) => {\n    const filteredTimes = workTimesArray.filter(time => time.priority === priority);\n    const totalDays = filteredTimes.reduce((sum, t) => sum + t.days, 0);\n    const totalHours = filteredTimes.reduce((sum, t) => sum + t.hours, 0);\n    const count = filteredTimes.length;\n\n    // Contar quantas issues \"Done\" existem nessa prioridade\n    const doneCount = issues.filter(issue => issue.priority === priority && issue.status === \"Done\").length;\n\n    acc[priority] = {\n        days: totalDays,\n        hours: totalHours,\n        count: count,\n        daysPeerIssue: count > 0 ? parseFloat((totalDays / count).toFixed(2)) : 0,\n        hourPeerIssue: count > 0 ? parseFloat((totalHours / count).toFixed(2)) : 0,\n        doneIssues: doneCount\n    };\n\n    return acc;\n}, {});\n\nreturn {\n    project,\n    sprint,\n    issues,\n    efficiency,\n    quality,\n    totalIssues,\n    bugIssues,\n    doneIssues,\n    priorities,\n    workTimes: totalWorkTime,\n    workTimeByPriority\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        0
+      ],
+      "id": "4f5f882e-b4fd-4fa9-884a-b8fc453ac635",
+      "name": "Code"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Data": {
+      "main": [
+        [
+          {
+            "node": "Get Issues DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Issues DB": {
+      "main": [
+        [
+          {
+            "node": "Treat Issues",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Treat Issues": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6f37cf68-2b89-4e9b-b127-5768f259fd66",
+  "meta": {
+    "instanceId": "cf845f71b8b3d05d6ef1ea59f43e314942fe109c6a0a6d7bf182680be4f39644"
+  },
+  "id": "glcVdw7cd826zeGX",
+  "tags": [
+    {
+      "createdAt": "2025-03-05T13:39:10.693Z",
+      "updatedAt": "2025-03-05T13:40:13.487Z",
+      "id": "gISbWmOl5ugOXvEl",
+      "name": "Metrics"
+    }
+  ]
+}

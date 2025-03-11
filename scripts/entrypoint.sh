@@ -1,5 +1,35 @@
 #!/bin/sh
 
+if [ ! -d "/home/node/.n8n/custom/node_modules" ]; then
+  mkdir /home/node/.n8n/custom/node_modules
+fi
+
+# Loop through all subdirectories
+for SUBFOLDER in "/home/node/.n8n/custom"/*/; do
+  if [ -d "$SUBFOLDER" ]; then
+      FOLDER_NAME=$(basename "$SUBFOLDER")
+
+      # Ignore node_modules
+      if [ "$FOLDER_NAME" == "node_modules" ]; then
+        continue
+      fi
+
+    if [ -d "/home/node/.n8n/custom/node_modules/$FOLDER_NAME" ]; then
+      rm -rf /home/node/.n8n/custom/node_modules/$FOLDER_NAME
+    fi
+
+    mkdir /home/node/.n8n/custom/node_modules/$FOLDER_NAME
+
+    # Execute your command inside each subfolder
+    cd $SUBFOLDER
+    npm i
+    npm run build
+    cp -r $SUBFOLDER* /home/node/.n8n/custom/node_modules/$FOLDER_NAME
+  fi
+done
+
+cd /home/node/.n8n/custom && npm link
+
 echo "Starting n8n..."
 
 # Start n8n in the background

@@ -1,0 +1,131 @@
+{
+  "name": "[Metrics] Schedule DB Data",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 10
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "b0492b44-9f98-4e14-88ab-e4e94a0707b4",
+      "name": "Cron Hours"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "ywBnUp85y3ZSIDos",
+          "mode": "list",
+          "cachedResultName": "[Metrics] Jira Data - Database"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        220,
+        0
+      ],
+      "id": "e8ea7658-56de-488f-8832-0111ba96d8db",
+      "name": "Database",
+      "notesInFlow": true,
+      "notes": "Save Issues in DB"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "eOZji69nYiHZEY0D",
+          "mode": "list",
+          "cachedResultName": "[Metrics] Issues Changelog Data"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        440,
+        0
+      ],
+      "id": "30925a02-2252-4f78-803d-371bac51c1db",
+      "name": "Changelog Data",
+      "notesInFlow": true,
+      "notes": "Save Changelog in DB"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Cron Hours": {
+      "main": [
+        [
+          {
+            "node": "Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Database": {
+      "main": [
+        [
+          {
+            "node": "Changelog Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6b1c0158-ce69-4838-b4ab-016a54887663",
+  "meta": {
+    "instanceId": "cf845f71b8b3d05d6ef1ea59f43e314942fe109c6a0a6d7bf182680be4f39644"
+  },
+  "id": "0rwSma7f0A90rJAt",
+  "tags": [
+    {
+      "createdAt": "2025-03-05T13:39:10.693Z",
+      "updatedAt": "2025-03-05T13:40:13.487Z",
+      "id": "gISbWmOl5ugOXvEl",
+      "name": "Metrics"
+    },
+    {
+      "createdAt": "2025-03-05T13:40:22.532Z",
+      "updatedAt": "2025-03-05T13:40:22.532Z",
+      "id": "y0f4A3eacVzC9C7A",
+      "name": "Jira"
+    }
+  ]
+}

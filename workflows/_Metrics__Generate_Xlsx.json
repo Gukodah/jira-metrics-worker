@@ -1,0 +1,209 @@
+{
+  "name": "[Metrics] Generate Xlsx",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "projectName"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "9cc9766a-e867-48c2-95d2-dc85ae2656a7",
+      "name": "Data"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "MGpQr4olBM1JUS4l",
+          "mode": "list",
+          "cachedResultName": "[Metrics] Get Data DB"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [
+            "project"
+          ],
+          "schema": [
+            {
+              "id": "project",
+              "displayName": "project",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        0
+      ],
+      "id": "46148b08-e000-4ddc-932f-93427cde9430",
+      "name": "Get DB Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "const issuesDB = $input.first().json.data.issues;\n\n// Loop Issues\nconst dataBase = (() => {\n  const sprintMap = new Map();\n\n  issuesDB.forEach(issue => {\n    // Filtra todas as sprints associadas à issue\n    const relatedSprints = issue.sprints.filter(sprint => sprint.state === \"active\" || sprint.state === \"closed\");\n\n    relatedSprints.forEach(sprint => {\n      const projectName     = issue.project.name;\n      const sprintName      = sprint.name;\n      const sprintStartDate = sprint.startDate;\n\n      // Se a sprint ainda não foi adicionada ao mapa, cria a entrada\n      if (!sprintMap.has(sprintName)) {\n        sprintMap.set(sprintName, {\n          project: projectName,\n          sprintStart: sprintStartDate,\n          sheet: sprintName,\n          lines: [\n            {\n              type: \"label\",\n              data: [\"ID\", \"Tipo\", \"Status\", \"Desenvolvedor\", \"Título\"],\n            },\n          ],\n        });\n      }\n\n      const sprintEntry = sprintMap.get(sprintName);\n\n      // Adiciona a issue à sprint\n      sprintEntry.lines.push({\n        type: \"infos\",\n        data: [\n          issue.id.toString(),\n          issue.type,\n          issue.status,\n          issue.assignee ? issue.assignee.name : \"Not Available\",\n          issue.summary,\n        ],\n      });\n    });\n  });\n\n  return Array.from(sprintMap.values()).sort((a, b) => new Date(b.sprintStart).getTime() - new Date(a.sprintStart).getTime());\n})();\n\n// Loop Metrics\nconst data = dataBase.map(el => {\n  let issues = el.lines.length - 1; // Desconta a linha do label\n  let bugs = 0;\n  let dones = 0;\n\n  el.lines.forEach((issue, index) => {\n    if (index > 0 && issue.data[2] === \"Done\") {\n      dones++;\n    }\n\n    if (index > 0 && issue.data[1] === \"Bug\") {\n      bugs++;\n    }\n  });\n\n  return {\n    ...el,\n    metrics: [\n      {\n        name: \"Eficiência\",\n        value: Math.round((dones / issues) * 10000) / 100 + \"%\",\n        fill: \"#FCF0E6\",\n        color: \"#733B0D\",\n      },\n      {\n        name: \"Qualidade\",\n        value: (bugs === 0 ? \"100\" : Math.round((1 - bugs / dones) * 10000) / 100) + \"%\",\n        fill: \"#F5DBD6\",\n        color: \"#642518\",\n      },\n      {\n        name: \"Cards\",\n        value: issues,\n        fill: \"#DAE5F6\",\n        color: \"#183764\",\n      },\n      {\n        name: \"Bugs\",\n        value: bugs,\n        fill: \"#F2C0BF\",\n        color: \"#5F1514\",\n      },\n      {\n        name: \"Dones\",\n        value: dones,\n        fill: \"#C8DBDC\",\n        color: \"#2B4244\",\n      },\n    ],\n  };\n});\n\nreturn data;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ],
+      "id": "7c3481fe-6283-4fb6-8c1b-f6dcafebc56b",
+      "name": "Treat Data to Excel"
+    },
+    {
+      "parameters": {},
+      "type": "CUSTOM.ExcelMetrics",
+      "typeVersion": 1,
+      "position": [
+        720,
+        0
+      ],
+      "id": "220c5795-9ead-484b-a0f7-41d4eda84bf6",
+      "name": "Generate Excel"
+    },
+    {
+      "parameters": {
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list",
+          "cachedResultName": "My Drive",
+          "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1Ba6GNuoUwJDLlUTZ6xEw4F3DtYN03uej",
+          "mode": "list",
+          "cachedResultName": "N8N",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1Ba6GNuoUwJDLlUTZ6xEw4F3DtYN03uej"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        940,
+        0
+      ],
+      "id": "133a9ad8-b1d2-4d21-bb62-2daa6adac8ad",
+      "name": "Google Drive",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "yeetpAAKNkVfefVx",
+          "name": "GoogleDriveAccount"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\n\nreturn {\n  \"name\": item.name,\n  \"download\": item.webContentLink,\n  \"view\": item.webViewLink\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1160,
+        0
+      ],
+      "id": "d2dd6b2c-9f55-4f8e-a2f6-d993d204cfe4",
+      "name": "Return File Infos"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Data": {
+      "main": [
+        [
+          {
+            "node": "Get DB Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get DB Data": {
+      "main": [
+        [
+          {
+            "node": "Treat Data to Excel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive": {
+      "main": [
+        [
+          {
+            "node": "Return File Infos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Treat Data to Excel": {
+      "main": [
+        [
+          {
+            "node": "Generate Excel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Excel": {
+      "main": [
+        [
+          {
+            "node": "Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "547cf00a-6e38-4e8e-ba79-14b4c37a3fcb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "cf845f71b8b3d05d6ef1ea59f43e314942fe109c6a0a6d7bf182680be4f39644"
+  },
+  "id": "qv1X1WLEdhcoF2zn",
+  "tags": [
+    {
+      "createdAt": "2025-03-05T13:39:10.693Z",
+      "updatedAt": "2025-03-05T13:40:13.487Z",
+      "id": "gISbWmOl5ugOXvEl",
+      "name": "Metrics"
+    }
+  ]
+}

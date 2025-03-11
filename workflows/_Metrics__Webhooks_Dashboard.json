@@ -1,0 +1,574 @@
+{
+  "name": "[Metrics] Webhooks Dashboard",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "6c57927c-5101-4e3c-8c03-f31725812eec",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        80,
+        780
+      ],
+      "id": "910243ed-4700-4cae-b0da-805a2417649e",
+      "name": "Webhook",
+      "webhookId": "6c57927c-5101-4e3c-8c03-f31725812eec"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1800,
+        700
+      ],
+      "id": "7f2ffe12-e8ed-4f14-b89d-c98b7161c572",
+      "name": "Respond to Webhook",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "select * from sprints GROUP by NAME ORDER by startDate",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        320,
+        680
+      ],
+      "id": "b31adca2-3bb7-4c4b-b392-d17f2b067ee2",
+      "name": "List sprints",
+      "credentials": {
+        "mySql": {
+          "id": "rE0S6LnGwawimzHM",
+          "name": "MySQLCredentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "path": "3229d82e-27d8-4401-8d7d-b24f4251e185",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        80,
+        200
+      ],
+      "id": "1f357646-c9a8-44d9-bebe-ce974f7af062",
+      "name": "Projects and Sprints",
+      "webhookId": "3229d82e-27d8-4401-8d7d-b24f4251e185",
+      "notesInFlow": true,
+      "notes": "List Projects and Strings"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "select * from projects GROUP by NAME",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        340,
+        100
+      ],
+      "id": "5d9a57c6-d244-4b8f-ac62-70a42f262b99",
+      "name": "Get Projects",
+      "notesInFlow": true,
+      "credentials": {
+        "mySql": {
+          "id": "rE0S6LnGwawimzHM",
+          "name": "MySQLCredentials"
+        }
+      },
+      "notes": "List All Projects"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n\t*\nFROM\n\tsprints AS sp\nWHERE\n\tsp.state!=\"future\"\nGROUP BY sp.`name`\nORDER BY startDate",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        340,
+        300
+      ],
+      "id": "d822fb69-f917-44d5-a631-a4c7f1e38dd4",
+      "name": "Get Sprints",
+      "notesInFlow": true,
+      "credentials": {
+        "mySql": {
+          "id": "rE0S6LnGwawimzHM",
+          "name": "MySQLCredentials"
+        }
+      },
+      "notes": "List All Sprints"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst projects = items.map(el => (el.json));\n\nreturn {projects};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        600,
+        100
+      ],
+      "id": "cda837d4-d4bb-4635-b6bf-0e6de38f8b17",
+      "name": "Treat Projects",
+      "notesInFlow": true,
+      "notes": "Treat Projects Return"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst sprints = items.map(el => el.json)\n\nreturn {sprints};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        600,
+        300
+      ],
+      "id": "3f3a576c-c657-42bc-8998-c55177e69ad5",
+      "name": "Treat Sprints",
+      "notesInFlow": true,
+      "notes": "Treat Sprints Return"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        840,
+        200
+      ],
+      "id": "0de8995e-c971-43c6-ac20-33549e87dace",
+      "name": "Merge",
+      "notesInFlow": true,
+      "notes": "Merge Projects and Sprints"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1280,
+        200
+      ],
+      "id": "877ccc7b-a43f-4f80-a5a0-cf3bea6fd7f2",
+      "name": "Response",
+      "notesInFlow": true,
+      "notes": "Return Projects and Sprints"
+    },
+    {
+      "parameters": {
+        "content": "## **Webhook to return Projects and Sprints**",
+        "height": 500,
+        "width": 1500,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "ecec4992-9ca5-4a87-9a2b-8092b43d4cc6",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## **Webhook to return Calculate infos by Project and Sprint**",
+        "height": 560,
+        "width": 2020,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        560
+      ],
+      "id": "29c64da2-afc0-408c-b764-108acd6cbec7",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items    = $input.all();\nconst projects = items[0].json.projects;\nconst sprints  = items[1].json.sprints;\n\nreturn {projects: projects, sprints: sprints};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1060,
+        200
+      ],
+      "id": "dcae1b5c-3275-40c8-b2be-16caf0fe5955",
+      "name": "Treat Return"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Recupera todos os itens de input e o valor da referência Sprint\nconst inputs = $input.all();\nconst referenceSprint = $('Webhook').first().json.query.sprint;\n\n// Encontra o índice do Sprint de referência nos inputs\nlet referenceSprintIndex = inputs.findIndex(item => item.json.name === referenceSprint);\n\n// Caso o número de inputs seja menor ou igual a 5, retorna todos os itens\nif (inputs.length <= 5) return inputs;\n\n// Se o Sprint de referência não for encontrado, ajusta o índice para os últimos 5 elementos\nif (referenceSprintIndex === -1 || inputs.length - referenceSprintIndex <= 5)\n  referenceSprintIndex = inputs.length - 5;\n\n// Retorna os últimos 5 itens a partir do índice de referência ajustado\nreturn inputs.slice(referenceSprintIndex, referenceSprintIndex + 5);\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        580,
+        680
+      ],
+      "id": "55014f0d-f226-4e49-b3e3-4dbd8d686ae3",
+      "name": "Get Sprints Around",
+      "notesInFlow": true,
+      "notes": "Get Sprints Around Reference"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "glcVdw7cd826zeGX",
+          "mode": "list",
+          "cachedResultName": "[Metrics] Calculate Metrics"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "projectName": "={{ $('Webhook').item.json.query.project }}",
+            "sprintName": "={{ $('List sprints').item.json.name }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "projectName",
+              "displayName": "projectName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "sprintName",
+              "displayName": "sprintName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        820,
+        680
+      ],
+      "id": "9a3498f6-2ad3-42f1-a742-fdddb1f11269",
+      "name": "Execute Calculate",
+      "notesInFlow": true,
+      "notes": "Execute Calculate"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "select * from users GROUP by NAME ORDER by name",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        320,
+        880
+      ],
+      "id": "96c1d9c1-f046-4699-baf4-ac5de67c291c",
+      "name": "List Devs",
+      "credentials": {
+        "mySql": {
+          "id": "rE0S6LnGwawimzHM",
+          "name": "MySQLCredentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst devs  = items.map(el => el.json)\n\nreturn {devs};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        580,
+        880
+      ],
+      "id": "54591037-fd4f-47d2-b04c-8ee6c981fff9",
+      "name": "Treat Devs",
+      "notesInFlow": true,
+      "notes": "Treat Sprints Return"
+    },
+    {
+      "parameters": {
+        "jsCode": "const metrics = $input.first().json.metrics;\nconst devs    = $input.last().json.devs;\n\nreturn {metrics, devs}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        700
+      ],
+      "id": "3dc01119-75b0-4d86-aa5e-d5e26f52ce3e",
+      "name": "Treat Data",
+      "notesInFlow": true,
+      "notes": "Treat Return Data"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1280,
+        700
+      ],
+      "id": "ce550602-8af8-4594-9804-d8ee65ca590e",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const metrics = $input.all().map(el => el.json);\nreturn {metrics}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        680
+      ],
+      "id": "9083ba69-6e0d-43b3-8edb-078f194e2489",
+      "name": "Code"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "List sprints",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "List Devs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List sprints": {
+      "main": [
+        [
+          {
+            "node": "Get Sprints Around",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Projects and Sprints": {
+      "main": [
+        [
+          {
+            "node": "Get Projects",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Sprints",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Projects": {
+      "main": [
+        [
+          {
+            "node": "Treat Projects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Sprints": {
+      "main": [
+        [
+          {
+            "node": "Treat Sprints",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Treat Projects": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Treat Sprints": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Treat Return",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Treat Return": {
+      "main": [
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Sprints Around": {
+      "main": [
+        [
+          {
+            "node": "Execute Calculate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Calculate": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Devs": {
+      "main": [
+        [
+          {
+            "node": "Treat Devs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Treat Devs": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Treat Data": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Treat Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2b9f5560-d23e-448e-8857-69ab7caa49f0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "cf845f71b8b3d05d6ef1ea59f43e314942fe109c6a0a6d7bf182680be4f39644"
+  },
+  "id": "bJdT6eYis4BMvBxg",
+  "tags": [
+    {
+      "createdAt": "2025-03-05T13:39:10.693Z",
+      "updatedAt": "2025-03-05T13:40:13.487Z",
+      "id": "gISbWmOl5ugOXvEl",
+      "name": "Metrics"
+    }
+  ]
+}

@@ -1,0 +1,322 @@
+{
+  "name": "[Metrics] Save Changlog Data",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1380,
+        80
+      ],
+      "id": "c632234f-cf61-4241-a38e-4952c9d03faa",
+      "name": "Data"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "9E7ZrFGJNnGz9OaJ",
+          "mode": "list",
+          "cachedResultName": "[Metrics] Database"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        -1160,
+        80
+      ],
+      "id": "60294f35-86fa-4d81-b382-db2624316aac",
+      "name": "Issues Data",
+      "notesInFlow": true,
+      "notes": "Get Issues Data DB"
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -940,
+        80
+      ],
+      "id": "893daadc-7cc3-431a-99dd-f57da8faf002",
+      "name": "Loop Over Items",
+      "retryOnFail": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "changelog",
+        "issueKey": "={{ $json.id }}",
+        "limit": 100
+      },
+      "type": "n8n-nodes-base.jira",
+      "typeVersion": 1,
+      "position": [
+        -720,
+        180
+      ],
+      "id": "69f529d6-9182-4192-b008-2d3ae529d7bc",
+      "name": "Changelog",
+      "credentials": {
+        "jiraSoftwareCloudApi": {
+          "id": "jVWtaY327x6lB0wD",
+          "name": "JiraSWCloudAccount"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const changelogs = $input.all();\n\n// Format Date\nconst pad = (num) => num.toString().padStart(2, \"0\");\n\nconst statusChanges = [];\nchangelogs.map(item => {\n  let statusItems = item.json.items.filter(el => el.field === \"status\");\n  if (statusItems.length===0) return;\n\n  let dateBase = new Date(item.json.created);\n  let created_at = `${dateBase.getFullYear()}-${pad(dateBase.getMonth() + 1)}-${pad(dateBase.getDate())} ${pad(dateBase.getHours())}:${pad(dateBase.getMinutes())}:${pad(dateBase.getSeconds())}`;\n\n  // Loop over status items\n  statusItems.map(status => {\n    statusChanges.push({\n      issue_id: $('Loop Over Items').first().json.id,\n      field: status.field,\n      from: status.fromString,\n      to: status.toString,\n      created_at: created_at\n    })\n  })\n})\n\nreturn statusChanges;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -500,
+        180
+      ],
+      "id": "97281bce-fe01-4271-b6bd-76d7307c7b05",
+      "name": "Code",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "deleteTable",
+        "table": {
+          "__rl": true,
+          "value": "issues_changelog",
+          "mode": "list",
+          "cachedResultName": "issues_changelog"
+        },
+        "deleteCommand": "delete",
+        "where": {
+          "values": [
+            {
+              "column": "issue_id",
+              "value": "={{ $('Loop Over Items').first().json.id }}"
+            }
+          ]
+        },
+        "combineConditions": "=AND",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "3b43b7b2-0b3f-4811-8c8e-484e838d81d9",
+      "name": "Delete",
+      "notesInFlow": true,
+      "credentials": {
+        "mySql": {
+          "id": "rE0S6LnGwawimzHM",
+          "name": "MySQLCredentials"
+        }
+      },
+      "notes": "Delete Old Data"
+    },
+    {
+      "parameters": {
+        "table": {
+          "__rl": true,
+          "value": "issues_changelog",
+          "mode": "list",
+          "cachedResultName": "issues_changelog"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        0,
+        160
+      ],
+      "id": "8d052cab-6e08-4456-9a12-a29b2ae50c00",
+      "name": "Save",
+      "notesInFlow": true,
+      "credentials": {
+        "mySql": {
+          "id": "rE0S6LnGwawimzHM",
+          "name": "MySQLCredentials"
+        }
+      },
+      "notes": "Add new Data"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "91877232-32a9-45c3-bcca-451f342eb4a7",
+              "leftValue": "={{ $input.item.json.isEmpty() }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -280,
+        180
+      ],
+      "id": "e7b14900-89aa-4215-98e6-ce1fbb781268",
+      "name": "If"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Data": {
+      "main": [
+        [
+          {
+            "node": "Issues Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Issues Data": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Changelog",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Changelog": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Delete",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Save",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "30b3a0a1-2f95-427c-8bb5-61606259cc0d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "cf845f71b8b3d05d6ef1ea59f43e314942fe109c6a0a6d7bf182680be4f39644"
+  },
+  "id": "wcMToa0d40v5LCdv",
+  "tags": [
+    {
+      "createdAt": "2025-03-05T13:44:22.015Z",
+      "updatedAt": "2025-03-05T13:44:22.015Z",
+      "id": "FtaJRvGLXbfWWNb1",
+      "name": "Mysql"
+    },
+    {
+      "createdAt": "2025-03-05T13:39:10.693Z",
+      "updatedAt": "2025-03-05T13:40:13.487Z",
+      "id": "gISbWmOl5ugOXvEl",
+      "name": "Metrics"
+    },
+    {
+      "createdAt": "2025-03-05T13:40:22.532Z",
+      "updatedAt": "2025-03-05T13:40:22.532Z",
+      "id": "y0f4A3eacVzC9C7A",
+      "name": "Jira"
+    }
+  ]
+}

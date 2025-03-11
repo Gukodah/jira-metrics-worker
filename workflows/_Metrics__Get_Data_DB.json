@@ -1,0 +1,403 @@
+{
+  "name": "[Metrics] Get Data DB",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "project"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -440,
+        180
+      ],
+      "id": "439781b1-989e-4377-9d0d-76842c23f750",
+      "name": "Get Data and Init"
+    },
+    {
+      "parameters": {
+        "jsCode": "const issues = $input.all();\n\nlet ret = [];\nissues.map(el => {\n  let item = {\n    id: el.json.id,\n    summary: el.json.summary,\n    description: el.json.description,\n    type: el.json.type,\n    priority: el.json.priority,\n    status: el.json.status,\n    project: {\n      id: el.json.project_id,\n      name: el.json.project_name,\n      type: el.json.project_type\n    },\n    sprints: JSON.parse(el.json.sprints),\n    reporter: {\n      id: el.json.reporter_id,\n      name: el.json.reporter_name,\n      mail: el.json.reporter_mail\n    },\n    assignee: {\n      id: el.json.assignee_id,\n      name: el.json.assignee_name,\n      mail: el.json.assignee_mail\n    },\n    created: el.json.created_at,\n    in_progress_time: el.json.in_progress_time,\n    done_time: el.json.done_time\n  };\n\n  ret.push(item);\n})\n\nreturn {issues: ret};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        460
+      ],
+      "id": "2bfe738b-756b-4206-8f81-37dd4d8162d3",
+      "name": "Issues Data",
+      "notesInFlow": true,
+      "notes": "Treat Issues Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "return {sprints: $input.all().map(item => ({name: item.json.name}))};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        180
+      ],
+      "id": "4bea9f18-6073-485f-aec1-9f7b1e0de6c0",
+      "name": "Sprints Name",
+      "notesInFlow": true,
+      "notes": "Get Sprints Names"
+    },
+    {
+      "parameters": {
+        "jsCode": "return {projects: $input.all().map(item => ({name: item.json.name}))};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "id": "35a2477c-283f-4540-8c0e-485c86d807b2",
+      "name": "Projects Name",
+      "notesInFlow": true,
+      "notes": "Get Projects Names"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "select distinct name from sprints ORDER BY startDate ASC;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        0,
+        180
+      ],
+      "id": "66031b27-58bf-4a9d-b84f-5ea001dd6b86",
+      "name": "Sprints",
+      "notesInFlow": true,
+      "credentials": {
+        "mySql": {
+          "id": "rE0S6LnGwawimzHM",
+          "name": "MySQLCredentials"
+        }
+      },
+      "notes": "Get Sprints List"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    iss.id,\n    pjt.id AS `project_id`,\n    pjt.`name` AS `project_name`,\n    pjt.`type` AS `project_type`,\n    rpt.id AS `reporter_id`,\n    rpt.`name` AS `reporter_name`,\n    rpt.mail AS `reporter_mail`,\n    asg.id AS `assignee_id`,\n    asg.`name` AS `assignee_name`,\n    asg.mail AS `assignee_mail`,\n    iss.`status`,\n    iss.`type`,\n    iss.`priority`,\n    iss.summary,\n    iss.`description`,\n    iss.created_at,\n    (\n        SELECT\n            JSON_ARRAYAGG(\n                JSON_OBJECT(\n                    'id', sps.id,\n                    'name', sps.name,\n                    'state', sps.state,\n                    'startDate', sps.startDate,\n                    'endDate', sps.endDate\n                )\n            ) AS json_sprints\n        FROM\n            sprints_issues AS sis\n        INNER JOIN sprints sps ON sps.id = sis.sprint_id\n        WHERE\n            sis.issue_id = iss.id\n    ) AS `sprints`,\n    (\n          SELECT\n              created_at\n          FROM\n              issues_changelog\n          WHERE\n              `to` = 'In Progress'\n              AND issue_id = iss.id\n          ORDER BY\n              created_at DESC\n          LIMIT\n              1\n      ) AS in_progress_time,\n      (\n          SELECT\n              created_at\n          FROM\n              issues_changelog\n          WHERE\n              `to` = 'Done'\n              AND issue_id = iss.id\n          ORDER BY\n              created_at DESC\n          LIMIT\n              1\n      ) AS done_time\nFROM\n    issues AS iss\n    INNER JOIN projects AS pjt ON pjt.id = iss.project_id\n    INNER JOIN users AS rpt ON rpt.id = iss.reporter_id\n    INNER JOIN users AS asg ON asg.id = iss.assignee_id;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        0,
+        560
+      ],
+      "id": "f58b84f4-ff18-4ef3-b3e0-1aa054f70bd9",
+      "name": "Issues",
+      "notesInFlow": true,
+      "credentials": {
+        "mySql": {
+          "id": "rE0S6LnGwawimzHM",
+          "name": "MySQLCredentials"
+        }
+      },
+      "notes": "Get Issues List"
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": {
+          "__rl": true,
+          "value": "projects",
+          "mode": "list",
+          "cachedResultName": "projects"
+        },
+        "returnAll": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "d289b387-af55-4111-8316-d573deb3be9f",
+      "name": "Projects",
+      "notesInFlow": true,
+      "credentials": {
+        "mySql": {
+          "id": "rE0S6LnGwawimzHM",
+          "name": "MySQLCredentials"
+        }
+      },
+      "notes": "Get Projects List"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        460,
+        180
+      ],
+      "id": "94340ffc-9d4e-45b7-b1aa-4b3f8745ee53",
+      "name": "Merge Data",
+      "notesInFlow": true,
+      "notes": "Return Data in One Array"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconsole.log(items[2])\n\nreturn {\n  data: {\n    projects: items[0].json.projects,\n    sprints: items[1].json.sprints,\n    issues: items[2].json.issues ? items[2].json.issues : []\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        180
+      ],
+      "id": "ca401255-ab57-4e9d-99ef-2591b7ae50a7",
+      "name": "Treat Data",
+      "notesInFlow": true,
+      "notes": "Treat Return Data"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e5af8d50-d31f-4bcb-a79f-aa53aa1e7577",
+              "leftValue": "={{ $json.project }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "499d24fe-5068-4c1e-aaa1-3325e2cb8470",
+              "leftValue": "={{ $json.project }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -200,
+        460
+      ],
+      "id": "8bf8dcf3-9880-477c-b015-6d2438919d79",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    iss.id,\n    pjt.id AS `project_id`,\n    pjt.`name` AS `project_name`,\n    pjt.`type` AS `project_type`,\n    rpt.id AS `reporter_id`,\n    rpt.`name` AS `reporter_name`,\n    rpt.mail AS `reporter_mail`,\n    asg.id AS `assignee_id`,\n    asg.`name` AS `assignee_name`,\n    asg.mail AS `assignee_mail`,\n    iss.`status`,\n    iss.`type`,\n    iss.`priority`,\n    iss.summary,\n    iss.`description`,\n    iss.created_at,\n    (\n        SELECT\n            JSON_ARRAYAGG(\n                JSON_OBJECT(\n                    'id', sps.id,\n                    'name', sps.name,\n                    'state', sps.state,\n                    'startDate', sps.startDate,\n                    'endDate', sps.endDate\n                )\n            ) AS json_sprints\n        FROM\n            sprints_issues AS sis\n        INNER JOIN sprints sps ON sps.id = sis.sprint_id\n        WHERE\n            sis.issue_id = iss.id\n    ) AS `sprints`,\n    (\n          SELECT\n              created_at\n          FROM\n              issues_changelog\n          WHERE\n              `to` = 'In Progress'\n              AND issue_id = iss.id\n          ORDER BY\n              created_at DESC\n          LIMIT\n              1\n      ) AS in_progress_time,\n      (\n          SELECT\n              created_at\n          FROM\n              issues_changelog\n          WHERE\n              `to` = 'Done'\n              AND issue_id = iss.id\n          ORDER BY\n              created_at DESC\n          LIMIT\n              1\n      ) AS done_time\nFROM\n    issues AS iss\n    INNER JOIN projects AS pjt ON pjt.id = iss.project_id\n    INNER JOIN users AS rpt ON rpt.id = iss.reporter_id\n    INNER JOIN users AS asg ON asg.id = iss.assignee_id\nWHERE\n  pjt.name=\"{{ $json.project }}\";",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        0,
+        380
+      ],
+      "id": "dba35fc1-e58b-4772-aadb-3d45ed79583a",
+      "name": "Issues By Project",
+      "notesInFlow": true,
+      "credentials": {
+        "mySql": {
+          "id": "rE0S6LnGwawimzHM",
+          "name": "MySQLCredentials"
+        }
+      },
+      "notes": "Get Issues List"
+    }
+  ],
+  "pinData": {
+    "Get Data and Init": [
+      {
+        "json": {
+          "project": ""
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Get Data and Init": {
+      "main": [
+        [
+          {
+            "node": "Sprints",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Projects",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Issues": {
+      "main": [
+        [
+          {
+            "node": "Issues Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Projects": {
+      "main": [
+        [
+          {
+            "node": "Projects Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sprints": {
+      "main": [
+        [
+          {
+            "node": "Sprints Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sprints Name": {
+      "main": [
+        [
+          {
+            "node": "Merge Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Projects Name": {
+      "main": [
+        [
+          {
+            "node": "Merge Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Issues Data": {
+      "main": [
+        [
+          {
+            "node": "Merge Data",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Merge Data": {
+      "main": [
+        [
+          {
+            "node": "Treat Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Issues By Project",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Issues",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Issues By Project": {
+      "main": [
+        [
+          {
+            "node": "Issues Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c5ad831b-742e-41ba-b28d-b75a633b0578",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "cf845f71b8b3d05d6ef1ea59f43e314942fe109c6a0a6d7bf182680be4f39644"
+  },
+  "id": "MGpQr4olBM1JUS4l",
+  "tags": [
+    {
+      "createdAt": "2025-03-05T13:44:22.015Z",
+      "updatedAt": "2025-03-05T13:44:22.015Z",
+      "id": "FtaJRvGLXbfWWNb1",
+      "name": "Mysql"
+    },
+    {
+      "createdAt": "2025-03-05T13:39:10.693Z",
+      "updatedAt": "2025-03-05T13:40:13.487Z",
+      "id": "gISbWmOl5ugOXvEl",
+      "name": "Metrics"
+    }
+  ]
+}
